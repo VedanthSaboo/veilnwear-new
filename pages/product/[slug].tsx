@@ -18,6 +18,7 @@ interface ProductPageProps {
     description: string;
     images: string[];
     sizes: string[];
+    stock: number;
   };
 }
 
@@ -33,7 +34,11 @@ const ProductPage: NextPage<ProductPageProps> = ({ product }) => {
   );
   const { addToCart } = useCart();
 
+  const isOutOfStock = product.stock <= 0;
+
   const handleAddToCart = () => {
+    if (isOutOfStock) return;
+
     if (product.sizes?.length > 0 && !selectedSize) {
       toast.error('Please select a size');
       return;
@@ -73,6 +78,13 @@ const ProductPage: NextPage<ProductPageProps> = ({ product }) => {
                   sizes="(min-width: 1024px) 50vw, 100vw"
                   className="object-cover"
                 />
+              )}
+              {isOutOfStock && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                  <span className="rounded-full border border-white/20 bg-black/50 px-6 py-3 text-lg font-bold uppercase tracking-widest text-white backdrop-blur-md">
+                    Out of Stock
+                  </span>
+                </div>
               )}
             </div>
 
@@ -133,10 +145,11 @@ const ProductPage: NextPage<ProductPageProps> = ({ product }) => {
                     <button
                       key={size}
                       onClick={() => setSelectedSize(size)}
+                      disabled={isOutOfStock}
                       className={`rounded-md border px-3 py-1 text-xs transition ${selectedSize === size
                         ? 'border-neutral-50 bg-neutral-50 text-neutral-950'
                         : 'border-neutral-700 text-neutral-300 hover:border-neutral-400'
-                        }`}
+                        } ${isOutOfStock ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       {size}
                     </button>
@@ -148,10 +161,19 @@ const ProductPage: NextPage<ProductPageProps> = ({ product }) => {
             <div className="pt-4">
               <Button
                 onClick={handleAddToCart}
-                className="w-full rounded-full border border-neutral-100 bg-neutral-50 px-8 py-3 text-sm font-medium uppercase tracking-[0.18em] text-neutral-950 hover:bg-white sm:w-auto"
+                disabled={isOutOfStock}
+                className={`w-full rounded-full border px-8 py-3 text-sm font-medium uppercase tracking-[0.18em] sm:w-auto ${isOutOfStock
+                    ? 'border-neutral-800 bg-neutral-900 text-neutral-500 cursor-not-allowed'
+                    : 'border-neutral-100 bg-neutral-50 text-neutral-950 hover:bg-white'
+                  }`}
               >
-                Add to Cart
+                {isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
               </Button>
+              {product.stock > 0 && product.stock < 5 && (
+                <p className="mt-2 text-xs text-orange-400">
+                  Only {product.stock} left in stock!
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -200,6 +222,7 @@ export const getStaticProps: GetStaticProps = async (ctx) => {
         price: product.price,
         images: product.images || [],
         sizes: product.sizes || [],
+        stock: product.stock ?? 0,
       },
     },
     revalidate: 60,

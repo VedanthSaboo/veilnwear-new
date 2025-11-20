@@ -7,7 +7,7 @@ import MobileNav from './MobileNav';
 import { FiMenu } from 'react-icons/fi';
 
 const Header: React.FC = () => {
-  const { firebaseUser } = useAuth();
+  const { firebaseUser, appUser } = useAuth();
   const router = useRouter();
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
@@ -76,6 +76,16 @@ const Header: React.FC = () => {
               className="text-xs font-medium uppercase tracking-[0.18em] text-neutral-300 hover:text-neutral-50"
             >
               My Account
+            </Link>
+          )}
+
+          {/* Admin Link */}
+          {appUser?.role === 'admin' && (
+            <Link
+              href="/admin"
+              className="text-xs font-medium uppercase tracking-[0.18em] text-red-400 hover:text-red-300"
+            >
+              Admin
             </Link>
           )}
 

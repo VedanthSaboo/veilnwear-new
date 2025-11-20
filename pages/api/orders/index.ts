@@ -3,6 +3,7 @@ import type { NextApiResponse } from 'next';
 import mongoose from 'mongoose';
 import dbConnect from '@/lib/dbConnect';
 import OrderModel, { IOrder } from '@/models/Order';
+import ProductModel from '@/models/Product';
 import { withAuth, AuthenticatedNextApiRequest } from '@/lib/withAuth';
 
 type OrderItemSnapshot = {
@@ -87,6 +88,23 @@ const handler = withAuth(
 
       try {
         await dbConnect();
+
+        // Validate stock and decrement
+        for (const item of items) {
+          // item.product is the ID because we mapped it in checkout/index.tsx
+          const productId = item.product || item.productId;
+          if (!productId) continue;
+
+          const product = await ProductModel.findById(productId);
+          if (!product) {
+            return res.status(400).json({ message: `Product not found: ${item.name}` });
+          }
+          if (product.stock < item.quantity) {
+            return res.status(400).json({ message: `Out of stock: ${item.name}` });
+          }
+          product.stock -= item.quantity;
+          await product.save();
+        }
 
         const created = await OrderModel.create({
           userId: req.appUser._id,
